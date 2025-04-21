@@ -1,4 +1,4 @@
-# mydeeplib/core/layers.py
+# apenet/core/layers.py
 import torch
 from ..initialize.initializers import HeInitializer
 

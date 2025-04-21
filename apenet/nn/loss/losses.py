@@ -1,4 +1,4 @@
-# mydeeplib/loss/losses.py
+# apenet/loss/losses.py
 import torch
 from ..core.activations import Softmax
 
