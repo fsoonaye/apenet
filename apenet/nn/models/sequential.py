@@ -91,9 +91,6 @@ class Sequential:
         Returns:
         - history: Dictionary containing training and validation metrics.
         """
-        from apenet.utils.data import get_batches
-        from apenet.utils.metrics import accuracy
-
         history = {'train_loss': [], 'train_accuracy': []}
         if X_val is not None and y_val is not None:
             history['val_loss'] = []
@@ -137,6 +134,7 @@ class Sequential:
                 history['val_loss'].append(val_loss)
                 history['val_accuracy'].append(val_accuracy)
 
+            # MAKE THIS A UTILS FUNCTION
             # Verbose printing
             if verbose > 0 and (epoch % verbose == 0 or epoch == epochs - 1):
                 if X_val is not None and y_val is not None:
