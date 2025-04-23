@@ -1,10 +1,12 @@
 # apenet/initialize/initializers.py
-import torch
+import numpy as np
 
 class Initializer:
     """Base class for all weight initializers."""
-    def __init__(self, device="cpu"):
-        self.device = device
+    def __init__(self, seed=None):
+        self.seed = seed
+        if seed is not None:
+            np.random.seed(seed)
 
     def initialize(self, shape):
         """Initialize weights."""
@@ -27,8 +29,8 @@ class HeInitializer(Initializer):
         - W: Initialized weights.
         """
         in_dim, out_dim = shape
-        std = torch.sqrt(torch.tensor(2.0, device=self.device) / in_dim)
-        return torch.randn(in_dim, out_dim, device=self.device) * std
+        std = np.sqrt(2.0 / in_dim)
+        return np.random.randn(in_dim, out_dim) * std
 
 class ZerosInitializer(Initializer):
     """Initialize weights with zeros."""
@@ -37,17 +39,17 @@ class ZerosInitializer(Initializer):
         Initialize weights with zeros.
 
         Parameters:
-        - shape: Shape of the weight tensor.
+        - shape: Shape of the weight array.
 
         Returns:
         - W: Initialized weights.
         """
-        return torch.zeros(shape, device=self.device)
+        return np.zeros(shape)
 
 class NormalInitializer(Initializer):
     """Initialize weights with normal distribution."""
-    def __init__(self, mean=0.0, std=0.01, device="cpu"):
-        super().__init__(device)
+    def __init__(self, mean=0.0, std=0.01, seed=None):
+        super().__init__(seed)
         self.mean = mean
         self.std = std
 
@@ -56,12 +58,12 @@ class NormalInitializer(Initializer):
         Initialize weights with normal distribution.
 
         Parameters:
-        - shape: Shape of the weight tensor.
+        - shape: Shape of the weight array.
 
         Returns:
         - W: Initialized weights.
         """
-        return torch.randn(shape, device=self.device) * self.std + self.mean
+        return np.random.randn(*shape) * self.std + self.mean
 
 class XavierInitializer(Initializer):
     """
@@ -80,5 +82,5 @@ class XavierInitializer(Initializer):
         - W: Initialized weights.
         """
         in_dim, out_dim = shape
-        std = torch.sqrt(torch.tensor(2.0, device=self.device) / (in_dim + out_dim))
-        return torch.randn(in_dim, out_dim, device=self.device) * std
+        std = np.sqrt(2.0 / (in_dim + out_dim))
+        return np.random.randn(in_dim, out_dim) * std

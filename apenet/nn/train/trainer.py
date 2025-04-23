@@ -1,6 +1,5 @@
 # apenet/train/trainer.py
-import torch
-from ..utils.metrics import accuracy
+
 
 class Trainer:
     """

@@ -1,5 +1,5 @@
 # apenet/utils/metrics.py
-import torch
+import numpy as np
 
 def accuracy(y_true, y_pred):
     """
@@ -13,10 +13,10 @@ def accuracy(y_true, y_pred):
     - accuracy: Computed accuracy.
     """
     if y_true.ndim == 1:  # Class indices
-        return torch.mean((y_pred == y_true).float()).item()
+        return np.mean(y_pred == y_true)
     else:  # One-hot encoded
-        y_indices = torch.argmax(y_true, dim=1)
-        return torch.mean((y_pred == y_indices).float()).item()
+        y_indices = np.argmax(y_true, axis=1)
+        return np.mean(y_pred == y_indices)
 
 def mean_squared_error(y_true, y_pred):
     """
@@ -29,4 +29,4 @@ def mean_squared_error(y_true, y_pred):
     Returns:
     - mse: Mean squared error.
     """
-    return torch.mean((y_true - y_pred) ** 2).item()
+    return np.mean((y_true - y_pred) ** 2)

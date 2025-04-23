@@ -6,10 +6,10 @@ setup(
     version="0.1.0",
     packages=find_packages(),
     install_requires=[
-        "torch>=1.0.0"
+        "numpy>=1.21.0"
     ],
     author="fsoonaye",
-    description="A minimalist deep learning library built using PyTorch tensors",
-    keywords="deep learning, neural networks, pytorch",
+    description="A minimalist deep learning library built using NumPy arrays",
+    keywords="deep learning, neural networks, numpy",
     python_requires=">=3.6",
 )

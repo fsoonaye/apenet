@@ -1,111 +1,144 @@
 # apenet/core/activations.py
-import torch
+import numpy as np
 
 class Activation:
     """Base class for all activation functions."""
     def forward(self, x):
+        """
+        Forward pass of the activation function.
+
+        Parameters:
+        - x: Input array.
+
+        Returns:
+        - Activation of the input array.
+        """
         raise NotImplementedError
-        
+
     def backward(self, dA):
+        """
+        Backward pass of the activation function.
+
+        Parameters:
+        - dA: Gradient of the cost with respect to the activation.
+
+        Returns:
+        - Gradient of the cost with respect to the pre-activation.
+        """
         raise NotImplementedError
-        
+
     def __call__(self, x):
+        """
+        Call method to perform the forward pass.
+
+        Parameters:
+        - x: Input array.
+
+        Returns:
+        - Activation of the input array.
+        """
         return self.forward(x)
 
 class Sigmoid(Activation):
     """
     Sigmoid activation function.
-    
+
     Forward: f(x) = 1 / (1 + exp(-x))
     Backward: f'(x) = f(x) * (1 - f(x))
     """
     def forward(self, x):
         """
         Numerically stable sigmoid implementation.
+
+        Parameters:
+        - x: Input array.
+
+        Returns:
+        - Sigmoid of the input array.
         """
-        # Initialize the output tensor
-        result = torch.empty_like(x)
-        
+        # Initialize the output array
+        result = np.empty_like(x)
+
         # Mask for positive and negative values
         positive = x >= 0
         negative = ~positive
-        
+
         # Compute sigmoid for positive values
-        result[positive] = 1.0 / (1.0 + torch.exp(-x[positive]))
-        
+        result[positive] = 1.0 / (1.0 + np.exp(-x[positive]))
+
         # Compute sigmoid for negative values
-        exp_x = torch.exp(x[negative])
+        exp_x = np.exp(x[negative])
         result[negative] = exp_x / (exp_x + 1.0)
-        
+
         self.output = result
         return result
-    
+
     def backward(self, dA):
         """
         Compute the gradient of the sigmoid activation.
-        
+
         Parameters:
         - dA: Gradient of the cost with respect to the activation.
-        
+
         Returns:
-        - dZ: Gradient of the cost with respect to the pre-activation.
+        - Gradient of the cost with respect to the pre-activation.
         """
         return dA * self.output * (1 - self.output)
 
 class ReLU(Activation):
     """
     ReLU activation function.
-    
+
     Forward: f(x) = max(0, x)
     Backward: f'(x) = 1 if x > 0 else 0
     """
     def forward(self, x):
         """
         ReLU activation function.
-        
+
         Parameters:
-        - x: Input tensor.
-        
+        - x: Input array.
+
         Returns:
-        - ReLU of the input tensor.
+        - ReLU of the input array.
         """
         self.input = x
-        return torch.maximum(torch.tensor(0, device=x.device), x)
-    
+        return np.maximum(0, x)
+
     def backward(self, dA):
         """
         Compute the gradient of the ReLU activation.
-        
+
         Parameters:
         - dA: Gradient of the cost with respect to the activation.
-        
+
         Returns:
-        - dZ: Gradient of the cost with respect to the pre-activation.
+        - Gradient of the cost with respect to the pre-activation.
         """
-        dZ = dA.clone()
+        dZ = dA.copy()
         dZ[self.input <= 0] = 0
         return dZ
 
 class Softmax(Activation):
     """
     Softmax activation function.
-    
+
     Forward: f(x_i) = exp(x_i) / sum(exp(x_j))
     """
     def forward(self, x):
         """
-        Compute the softmax of the input tensor.
-        
+        Compute the softmax of the input array.
+
         Parameters:
-        - x: Input tensor.
-        
+        - x: Input array.
+
         Returns:
-        - softmax: Softmax of the input tensor.
+        - Softmax of the input array.
         """
-        exp_x = torch.exp(x - torch.max(x, dim=1, keepdim=True)[0])  # Subtract max for numerical stability
-        self.output = exp_x / torch.sum(exp_x, dim=1, keepdim=True)
+        exp_x = np.exp(x - np.max(x, axis=1, keepdims=True))  # Subtract max for numerical stability
+        self.output = exp_x / np.sum(exp_x, axis=1, keepdims=True)
         return self.output
-    
+
     def backward(self, dA):
         """
         For softmax, this is typically combined with cross-entropy loss,
@@ -125,13 +158,13 @@ class Tanh(Activation):
         Tanh activation function.
 
         Parameters:
-        - x: Input tensor.
+        - x: Input array.
 
         Returns:
-        - Tanh of the input tensor.
+        - Tanh of the input array.
         """
-        exp_x = torch.exp(x)
-        exp_neg_x = torch.exp(-x)
+        exp_x = np.exp(x)
+        exp_neg_x = np.exp(-x)
         self.output = (exp_x - exp_neg_x) / (exp_x + exp_neg_x)
         return self.output
 
@@ -143,6 +176,6 @@ class Tanh(Activation):
         - dA: Gradient of the cost with respect to the activation.
 
         Returns:
-        - dZ: Gradient of the cost with respect to the pre-activation.
+        - Gradient of the cost with respect to the pre-activation.
         """
         return dA * (1 - self.output ** 2)

@@ -1,51 +1,53 @@
 # apenet/optimizers/optimizers.py
-import torch
+import numpy as np
 
 class Optimizer:
     """Base class for all optimizers."""
     def __init__(self, parameters):
         """
         Initialize the optimizer.
-        
+
         Parameters:
-        - parameters: Dictionary of parameters to optimize.
+        - parameters: List of parameter dictionaries from each layer.
         """
         self.parameters = parameters
-    
+
     def step(self):
         """Update parameters using gradients."""
         raise NotImplementedError
-    
+
     def zero_grad(self):
         """Zero out gradients."""
-        for param in self.parameters:
-            if self.parameters[param].grad is not None:
-                self.parameters[param].grad.zero_()
+        for layer in self.parameters:
+            if hasattr(layer, 'gradients'):
+                for grad in layer.gradients.values():
+                    grad.fill(0)
 
-class StochGradDescent(Optimizer):
+class SGD(Optimizer):
     """
     Stochastic Gradient Descent optimizer.
-    
+
     Parameters are updated as:
     θ = θ - learning_rate * gradient
     """
     def __init__(self, parameters, learning_rate=0.01, momentum=0.9):
         """
         Initialize the SGD optimizer.
-        
+
         Parameters:
         - parameters: List of parameter dictionaries from each layer.
         - learning_rate: Learning rate for gradient descent.
+        - momentum: Momentum factor.
         """
         super().__init__(parameters)
         self.learning_rate = learning_rate
         self.momentum = momentum
         self.velocities = {}
-    
+
     def step(self):
         """
         Update parameters using gradients.
-        
+
         For each layer, update its parameters using its gradients.
         """
         for layer in self.parameters:
@@ -55,21 +57,21 @@ class StochGradDescent(Optimizer):
 
             layer_params = layer.get_parameters()
             layer_grads = layer.get_gradients()
-            
+
             for param_name in layer_params:
                 gradient_name = f"d{param_name}"
                 if gradient_name in layer_grads:
                     # Initialize velocity if not already
                     key = (id(layer), param_name)
                     if key not in self.velocities:
-                        self.velocities[key] = torch.zeros_like(layer_params[param_name])
-                    
+                        self.velocities[key] = np.zeros_like(layer_params[param_name])
+
                     # Update velocity
                     v = self.velocities[key]
                     grad = layer_grads[gradient_name]
                     v = self.momentum * v - self.learning_rate * grad
                     self.velocities[key] = v
-                    
+
                     # Update parameter
                     layer_params[param_name] += v
 
@@ -121,16 +123,16 @@ class Adam(Optimizer):
                     pid = id(p)
                     # Initialize moments if not yet
                     if pid not in self.m:
-                        self.m[pid] = torch.zeros_like(p)
-                        self.v[pid] = torch.zeros_like(p)
-                    
+                        self.m[pid] = np.zeros_like(p)
+                        self.v[pid] = np.zeros_like(p)
+
                     # Update moments
                     self.m[pid] = self.beta1 * self.m[pid] + (1 - self.beta1) * g
                     self.v[pid] = self.beta2 * self.v[pid] + (1 - self.beta2) * (g * g)
-                    
+
                     # Bias correction
                     m_hat = self.m[pid] / (1 - self.beta1 ** self.t)
                     v_hat = self.v[pid] / (1 - self.beta2 ** self.t)
-                    
+
                     # Update parameter
-                    layer_params[param_name] -= self.learning_rate * m_hat / (v_hat.sqrt() + self.epsilon)
+                    layer_params[param_name] -= self.learning_rate * m_hat / (np.sqrt(v_hat) + self.epsilon)
