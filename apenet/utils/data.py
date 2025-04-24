@@ -169,9 +169,8 @@ def standardize(X: np.ndarray) -> np.ndarray:
     np.ndarray
         The standardized features array.
     """
-    # Convert to float32 for precision and memory efficiency
     X = X.astype('float32')
-
     mean = np.mean(X, axis=0)
     std = np.std(X, axis=0)
+    std[std == 0] = 1  # Prevent division by zero
     return (X - mean) / std
