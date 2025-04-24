@@ -1,94 +1,138 @@
-# apenet/models/sequential.py
 import numpy as np
 from ..core.layers import Layer
 from ..core.activations import Activation
-from ..utils.data import get_batches
-from ..utils.metrics import accuracy
+from apenet.utils.data import get_batches
+from ...utils.metrics import accuracy
+from ..utils.helpers import should_print_epoch, print_epoch_status
+
+from typing import Optional, List, Any, Dict, Union
+from apenet.nn.loss.losses import Loss
+from apenet.nn.optimizers.optimizers import Optimizer
 
 class Sequential:
     """
     Sequential container for stacking layers.
 
-    The Sequential model is a linear stack of layers where data flows through
-    the layers in sequence during forward and backward passes.
+    Data flows through layers in sequence during forward and backward passes.
     """
-    def __init__(self, layers=None):
-        """
-        Initialize a Sequential model.
 
-        Parameters:
-        - layers: List of layers (optional).
+    def __init__(self, layers: Optional[List[Union[Layer, Activation]]] = None):
         """
-        self.layers = layers if layers is not None else []
+        Initialize the Sequential model.
 
-    def add(self, layer):
+        Parameters
+        ----------
+        layers : list, optional
+            List of initial layers (Layer or Activation), by default None.
         """
-        Add a layer to the model.
+        self.layers: List[Any] = layers if layers is not None else []
 
-        Parameters:
-        - layer: Layer to add to the model.
+    def add(self, layer: Union[Layer, Activation]) -> None:
+        """
+        Add a layer or activation to the model.
+
+        Parameters
+        ----------
+        layer : Any
+            Layer or Activation instance to be added.
+
+        Raises
+        ------
+        TypeError
+            If the provided object is not a Layer or Activation.
         """
         if not (isinstance(layer, Layer) or isinstance(layer, Activation)):
             raise TypeError("Layer must be an instance of Layer or Activation class")
         self.layers.append(layer)
 
-    def forward(self, x):
+    def forward(self, x: np.ndarray) -> np.ndarray:
         """
         Forward pass through all layers.
 
-        Parameters:
-        - x: Input array.
+        Parameters
+        ----------
+        x : np.ndarray
+            Input array.
 
-        Returns:
-        - output: Output array.
+        Returns
+        -------
+        np.ndarray
+            Output array.
         """
-        output = x
         for layer in self.layers:
-            output = layer.forward(output)
-        return output
+            x = layer.forward(x)
+        return x
 
-    def backward(self, grad_output):
+    def backward(self, grad_output: np.ndarray) -> np.ndarray:
         """
         Backward pass through all layers.
 
-        Parameters:
-        - grad_output: Gradient of the loss with respect to the model output.
+        Parameters
+        ----------
+        grad_output : np.ndarray
+            Gradient with respect to the model output.
 
-        Returns:
-        - grad_input: Gradient of the loss with respect to the model input.
+        Returns
+        -------
+        np.ndarray
+            Gradient with respect to the model input.
         """
         grad = grad_output
         for layer in reversed(self.layers):
             grad = layer.backward(grad)
         return grad
 
-    def get_parameters(self):
+    def get_parameters(self) -> List[Any]:
         """
-        Get all trainable parameters.
+        Get the list of parameters from each layer.
 
-        Returns:
-        - parameters: List of parameter dictionaries from each layer.
+        Returns
+        -------
+        list
+            List of parameters from each layer.
         """
         return self.layers
 
-    def train(self, X_train, y_train, loss_fn, optimizer, epochs=100, batch_size=32,
-            X_val=None, y_val=None, verbose=1):
+    def fit(
+        self,
+        X_train: np.ndarray,
+        y_train: np.ndarray,
+        loss_fn: Loss,
+        optimizer: Optimizer,
+        epochs: int = 100,
+        batch_size: int = 32,
+        X_val: Optional[np.ndarray] = None,
+        y_val: Optional[np.ndarray] = None,
+        verbose: int = 1,
+    ) -> Dict[str, List[float]]:
         """
-        Train the model.
+        Train the model using mini-batch gradient descent.
 
-        Parameters:
-        - X_train: Training input data.
-        - y_train: Training labels.
-        - loss_fn: Loss function.
-        - optimizer: Optimizer.
-        - epochs: Number of training epochs.
-        - batch_size: Size of mini-batches.
-        - X_val: Validation input data.
-        - y_val: Validation labels.
-        - verbose: Verbosity level.
+        Parameters
+        ----------
+        X_train : np.ndarray
+            Training input data.
+        y_train : np.ndarray
+            Training labels.
+        loss_fn : Loss
+            Loss function.
+        optimizer : Optimizer
+            Optimizer for parameter updates.
+        epochs : int, default=100
+            Number of training epochs.
+        batch_size : int, default=32
+            Number of samples per batch.
+        X_val : np.ndarray, optional
+            Validation input data.
+        y_val : np.ndarray, optional
+            Validation labels.
+        verbose : int, default=1
+            Verbosity level.
 
-        Returns:
-        - history: Dictionary containing training and validation metrics.
+        Returns
+        -------
+        dict
+            Training and validation history (loss and accuracy per epoch).
         """
         history = {'train_loss': [], 'train_accuracy': []}
         if X_val is not None and y_val is not None:
@@ -102,16 +146,18 @@ class Sequential:
 
             # Mini-batch training
             for X_batch, y_batch in get_batches(X_train, y_train, batch_size, shuffle=True):
+                curr_batch_size = X_batch.shape[0]
+
                 # Forward pass
                 y_pred = self.forward(X_batch)
 
                 # Compute loss
                 loss = loss_fn(y_pred, y_batch)
-                epoch_loss += loss.item() * X_batch.shape[0]
+                epoch_loss += loss.item() * curr_batch_size
 
                 # Compute accuracy
-                correct_preds += accuracy(y_batch, np.argmax(y_pred, axis=1)) * X_batch.shape[0]
-                num_samples += X_batch.shape[0]
+                correct_preds += accuracy(y_true=y_batch, y_pred=y_pred) * curr_batch_size
+                num_samples += curr_batch_size
 
                 # Backward pass
                 grad_output = loss_fn.backward()
@@ -134,60 +180,63 @@ class Sequential:
                 history['val_accuracy'].append(val_accuracy)
 
             # Verbose printing
-            if verbose > 0 and (epoch % verbose == 0 or epoch == epochs - 1):
-                if X_val is not None and y_val is not None:
-                    print(f"Epoch {epoch+1}/{epochs}: train_loss={epoch_loss:.4f}, train_accuracy={epoch_accuracy:.4f}, val_loss={val_loss:.4f}, val_accuracy={val_accuracy:.4f}")
-                else:
-                    print(f"Epoch {epoch+1}/{epochs}: train_loss={epoch_loss:.4f}, train_accuracy={epoch_accuracy:.4f}")
+            if verbose and should_print_epoch(epoch, epochs, verbose):
+                print_epoch_status(
+                    epoch, epochs, epoch_loss, epoch_accuracy,
+                    val_loss if X_val is not None else None,
+                    val_accuracy if X_val is not None else None
+                )
 
         return history
 
-    def evaluate(self, X, y, loss_fn):
+    def evaluate(self, X: np.ndarray, y: np.ndarray, loss_fn: Loss) -> tuple[float, float]:
         """
         Evaluate the model.
 
-        Parameters:
-        - X: Input data.
-        - y: Labels.
-        - loss_fn: Loss function.
+        Parameters
+        ----------
+        X : np.ndarray
+            Input data.
+        y : np.ndarray
+            True labels.
+        loss_fn : Loss
+            Loss function.
 
-        Returns:
-        - loss: Loss value.
-        - accuracy: Accuracy value.
+        Returns
+        -------
+        tuple
+            Tuple of (loss, accuracy).
         """
-        # Forward pass
         y_pred = self.forward(X)
-
-        # Compute loss
         loss = loss_fn(y_pred, y)
+        accuracy_val = accuracy(y_true=y, y_pred=y_pred)
+        return float(loss.item()), float(accuracy_val)
 
-        # Compute accuracy
-        accuracy_value = accuracy(y, np.argmax(y_pred, axis=1))
-
-        return loss.item(), accuracy_value
-
-    def predict(self, X):
+    def predict(self, X: np.ndarray) -> np.ndarray:
         """
         Make predictions.
 
-        Parameters:
-        - X: Input data.
+        Parameters
+        ----------
+        X : np.ndarray
+            Input data.
 
-        Returns:
-        - predictions: Predicted class indices.
+        Returns
+        -------
+        np.ndarray
+            Predicted class indices.
         """
-        # Forward pass
         y_pred = self.forward(X)
-
-        # Get predicted class
         return np.argmax(y_pred, axis=1)
 
-    def save(self, filepath):
+    def save(self, filepath: str) -> None:
         """
-        Save the model parameters.
+        Save the model parameters to a file.
 
-        Parameters:
-        - filepath: Path to save the model.
+        Parameters
+        ----------
+        filepath : str
+            Path of the file where parameters are saved.
         """
         params = {}
         for i, layer in enumerate(self.layers):
@@ -197,15 +246,16 @@ class Sequential:
 
         np.savez(filepath, **params)
 
-    def load(self, filepath):
+    def load(self, filepath: str) -> None:
         """
-        Load the model parameters.
+        Load the model parameters from a file.
 
-        Parameters:
-        - filepath: Path to load the model from.
+        Parameters
+        ----------
+        filepath : str
+            Path of the file to load parameters from.
         """
         params = np.load(filepath)
-
         for i, layer in enumerate(self.layers):
             if hasattr(layer, 'parameters'):
                 for param_name in layer.parameters:

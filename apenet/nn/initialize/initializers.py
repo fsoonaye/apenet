@@ -1,12 +1,14 @@
 # apenet/initialize/initializers.py
+from functools import lru_cache
+import inspect
+import sys
 import numpy as np
 
 class Initializer:
     """Base class for all weight initializers."""
-    def __init__(self, seed=None):
-        self.seed = seed
-        if seed is not None:
-            np.random.seed(seed)
+    def __init__(self, rng=None, seed=None):
+        self.rng = rng if rng is not None else np.random.default_rng(seed)
+
 
     def initialize(self, shape):
         """Initialize weights."""
@@ -84,3 +86,44 @@ class XavierInitializer(Initializer):
         in_dim, out_dim = shape
         std = np.sqrt(2.0 / (in_dim + out_dim))
         return np.random.randn(in_dim, out_dim) * std
+
+@lru_cache(maxsize=1)
+def get_initializer_registry():
+    """
+    Auto-discover all initializer classes and create a registry.
+    Cache the result for performance.
+    """
+    registry = {}
+    for name, obj in inspect.getmembers(sys.modules[__name__]):
+        if inspect.isclass(obj) and issubclass(obj, Initializer) and obj != Initializer:
+            # Remove 'Initializer' suffix and convert to lowercase
+            key = name.lower().replace('initializer', '')
+            registry[key] = obj
+    return registry
+
+def get_initializer(name, **kwargs):
+    """
+    Get initializer by name.
+    
+    Args:
+        name (str): Name of the initializer
+        **kwargs: Additional arguments to pass to the initializer
+        
+    Returns:
+        Initializer: Instance of the initializer
+        
+    Raises:
+        ValueError: If initializer name is not recognized
+    """
+    if name is None:
+        return None
+        
+    registry = get_initializer_registry()
+    name = name.lower()
+    initializer_class = registry.get(name)
+    
+    if initializer_class is None:
+        available = list(registry.keys())
+        raise ValueError(f"Unsupported initializer: '{name}'. Available options: {available}")
+    
+    return initializer_class(**kwargs)

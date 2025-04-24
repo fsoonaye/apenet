@@ -1,4 +1,7 @@
 # apenet/core/activations.py
+from functools import lru_cache
+import inspect
+import sys
 import numpy as np
 
 class Activation:
@@ -49,13 +52,8 @@ class Sigmoid(Activation):
     def forward(self, x):
         """
         Numerically stable sigmoid implementation.
-
-        Parameters:
-        - x: Input array.
-
-        Returns:
-        - Sigmoid of the input array.
         """
+
         # Initialize the output array
         result = np.empty_like(x)
 
@@ -74,15 +72,6 @@ class Sigmoid(Activation):
         return result
 
     def backward(self, dA):
-        """
-        Compute the gradient of the sigmoid activation.
-
-        Parameters:
-        - dA: Gradient of the cost with respect to the activation.
-
-        Returns:
-        - Gradient of the cost with respect to the pre-activation.
-        """
         return dA * self.output * (1 - self.output)
 
 class ReLU(Activation):
@@ -93,28 +82,10 @@ class ReLU(Activation):
     Backward: f'(x) = 1 if x > 0 else 0
     """
     def forward(self, x):
-        """
-        ReLU activation function.
-
-        Parameters:
-        - x: Input array.
-
-        Returns:
-        - ReLU of the input array.
-        """
         self.input = x
         return np.maximum(0, x)
 
     def backward(self, dA):
-        """
-        Compute the gradient of the ReLU activation.
-
-        Parameters:
-        - dA: Gradient of the cost with respect to the activation.
-
-        Returns:
-        - Gradient of the cost with respect to the pre-activation.
-        """
         dZ = dA.copy()
         dZ[self.input <= 0] = 0
         return dZ
@@ -126,24 +97,11 @@ class Softmax(Activation):
     Forward: f(x_i) = exp(x_i) / sum(exp(x_j))
     """
     def forward(self, x):
-        """
-        Compute the softmax of the input array.
-
-        Parameters:
-        - x: Input array.
-
-        Returns:
-        - Softmax of the input array.
-        """
         exp_x = np.exp(x - np.max(x, axis=1, keepdims=True))  # Subtract max for numerical stability
         self.output = exp_x / np.sum(exp_x, axis=1, keepdims=True)
         return self.output
 
     def backward(self, dA):
-        """
-        For softmax, this is typically combined with cross-entropy loss,
-        so we don't implement a separate backward pass here.
-        """
         pass  # Not used directly; combined with CrossEntropyLoss
 
 class Tanh(Activation):
@@ -154,28 +112,37 @@ class Tanh(Activation):
     Backward: f'(x) = 1 - f(x)^2
     """
     def forward(self, x):
-        """
-        Tanh activation function.
-
-        Parameters:
-        - x: Input array.
-
-        Returns:
-        - Tanh of the input array.
-        """
         exp_x = np.exp(x)
         exp_neg_x = np.exp(-x)
         self.output = (exp_x - exp_neg_x) / (exp_x + exp_neg_x)
         return self.output
 
     def backward(self, dA):
-        """
-        Compute the gradient of the Tanh activation.
-
-        Parameters:
-        - dA: Gradient of the cost with respect to the activation.
-
-        Returns:
-        - Gradient of the cost with respect to the pre-activation.
-        """
         return dA * (1 - self.output ** 2)
+
+
+@lru_cache(maxsize=1)
+def get_activation_registry():
+    """
+    Auto-discover all activation classes and create a registry.
+    Cache the result for performance.
+    """
+    registry = {}
+    for name, obj in inspect.getmembers(sys.modules[__name__]):
+        if inspect.isclass(obj) and issubclass(obj, Activation) and obj != Activation:
+            registry[name.lower()] = obj
+    return registry
+
+def get_activation(name):
+    if name is None:
+        return None
+        
+    registry = get_activation_registry()
+    name = name.lower()
+    activation_class = registry.get(name)
+    
+    if activation_class is None:
+        available = list(registry.keys())
+        raise ValueError(f"Unsupported activation function: '{name}'. Available options: {available}")
+    
+    return activation_class()

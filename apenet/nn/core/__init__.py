@@ -1,1 +1,1 @@
-# apenet/core/__init__.py
+# apenet/nn/core/__init__.py
