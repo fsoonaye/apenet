@@ -1,10 +1,10 @@
 # Apenet
 
-Apenet is a minimalist machine learning library built using only NumPy arrays and matrix multiplication.  
+Apenet is a minimalist machine learning library built using only NumPy.
 
-Apenet was written to help me grasp key concepts in machine learning and is intended for pedagogical and educational purposes. It is not recommended for heavy or efficiency-critical tasks.  
+The multi-layer perceptron was my first project - I built it to understand how neural networks work from the inside, believing you don't truly understand something unless you build it yourself, and to practice Python OOP. Later, for my research internship, I implemented custom decision trees and random forests to have full control over simulations and extract any statistics needed for my research.
 
-It aims to be human-readable, unlike larger and more efficient data science/ML libraries such as scikit-learn, NumPy, or PyTorch. Given its direct usage, it uses NumPy-style docstrings.
+The library is intended for pedagogical and educational purposes and is not recommended for production use. It aims to be human-readable, unlike larger ML libraries, and uses NumPy-style docstrings.
 
 ## Main Components
 
