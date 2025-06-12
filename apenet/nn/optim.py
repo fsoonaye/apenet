@@ -1,14 +1,18 @@
-# apenet/optimizers/optimizers.py
+# apenet/nn/optim.py
 import numpy as np
 
 class Optimizer:
-    """Base class for all optimizers."""
+    """Base class for all optimizers.
+    
+    This class defines the interface that all optimizer classes must implement.
+    """
     def __init__(self, parameters):
-        """
-        Initialize the optimizer.
-
-        Parameters:
-        - parameters: List of parameter dictionaries from each layer.
+        """Initialize the optimizer.
+        
+        Parameters
+        ----------
+        parameters : list
+            List of parameter dictionaries from each layer.
         """
         self.parameters = parameters
 
@@ -17,27 +21,29 @@ class Optimizer:
         raise NotImplementedError
 
     def zero_grad(self):
-        """Zero out gradients."""
+        """Zero out gradients for all parameters."""
         for layer in self.parameters:
             if hasattr(layer, 'gradients'):
                 for grad in layer.gradients.values():
                     grad.fill(0)
 
 class SGD(Optimizer):
-    """
-    Stochastic Gradient Descent optimizer.
-
+    """Stochastic Gradient Descent optimizer.
+    
     Parameters are updated as:
-    θ = θ - learning_rate * gradient
+    velocity = momentum * velocity - learning_rate * gradient
+    θ = θ + velocity
     """
     def __init__(self, parameters, learning_rate=0.01, momentum=0.9):
         """
-        Initialize the SGD optimizer.
-
-        Parameters:
-        - parameters: List of parameter dictionaries from each layer.
-        - learning_rate: Learning rate for gradient descent.
-        - momentum: Momentum factor.
+        Parameters
+        ----------
+        parameters : list
+            List of parameter dictionaries from each layer.
+        learning_rate : float, default=0.01
+            Learning rate for gradient descent.
+        momentum : float, default=0.9
+            Momentum factor.
         """
         super().__init__(parameters)
         self.learning_rate = learning_rate
@@ -45,10 +51,9 @@ class SGD(Optimizer):
         self.velocities = {}
 
     def step(self):
-        """
-        Update parameters using gradients.
-
-        For each layer, update its parameters using its gradients.
+        """Update parameters using gradients with momentum.
+        
+        For each parameter, computes the momentum update and applies it.
         """
         for layer in self.parameters:
             # skip activation layers
@@ -76,22 +81,29 @@ class SGD(Optimizer):
                     layer_params[param_name] += v
 
 class Adam(Optimizer):
-    """
-    Adam optimizer.
-
-    Parameters are updated as per the Adam update rules, maintaining running averages
-    of both the gradients and their squares (first and second moments).
+    """Adam optimizer.
+    
+    Parameters are updated as:
+    m = β₁ * m + (1 - β₁) * g
+    v = β₂ * v + (1 - β₂) * g²
+    m̂ = m / (1 - β₁ᵗ)
+    v̂ = v / (1 - β₂ᵗ)
+    θ = θ - learning_rate * m̂ / (√v̂ + ε)
     """
     def __init__(self, parameters, learning_rate=0.001, beta1=0.9, beta2=0.999, epsilon=1e-8):
         """
-        Initialize the Adam optimizer.
-
-        Parameters:
-        - parameters: List of layer modules (with .get_parameters and .get_gradients)
-        - learning_rate: Initial step size (default 0.001)
-        - beta1: Decay rate for the first moment estimates (default 0.9)
-        - beta2: Decay rate for the second moment estimates (default 0.999)
-        - epsilon: Small constant for numerical stability (default 1e-8)
+        Parameters
+        ----------
+        parameters : list
+            List of layer modules with get_parameters and get_gradients methods.
+        learning_rate : float, default=0.001
+            Initial step size.
+        beta1 : float, default=0.9
+            Decay rate for the first moment estimates.
+        beta2 : float, default=0.999
+            Decay rate for the second moment estimates.
+        epsilon : float, default=1e-8
+            Small constant for numerical stability.
         """
         super().__init__(parameters)
         self.learning_rate = learning_rate
@@ -101,12 +113,15 @@ class Adam(Optimizer):
         self.t = 0  # timestep
 
         # Store first and second moment estimates per parameter
-        # {id(param): tensor same shape as param}
         self.m = {}
         self.v = {}
 
     def step(self):
-        """Update parameters using Adam algorithm."""
+        """Update parameters using Adam algorithm.
+        
+        Computes adaptive learning rates for each parameter based on 
+        first and second moment estimates of the gradients.
+        """
         self.t += 1
         for layer in self.parameters:
             if not hasattr(layer, 'get_parameters'):

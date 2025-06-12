@@ -3,7 +3,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="apenet",
-    version="0.3.0",
+    version="0.6.4",
     packages=find_packages(),
     install_requires=[
         "numpy>=1.21.0"
@@ -11,7 +11,6 @@ setup(
     extras_require={
         'eye': [
             "matplotlib",
-            "pygraphviz",
             "networkx"
         ],
         'rf': [
@@ -20,7 +19,7 @@ setup(
         ]
     },
     author="fsoonaye",
-    description="A minimalist machine learning library built using NumPy arrays",
-    keywords="deep learning, neural networks, numpy",
-    python_requires=">=3.6",
+    description="A minimalist machine learning library built using NumPy",
+    keywords="machine learning, random forests, decision trees, classification, regression, deep learning, neural networks, numpy",
+    python_requires=">=3.10",
 )

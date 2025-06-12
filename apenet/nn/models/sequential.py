@@ -1,39 +1,34 @@
 import numpy as np
-from ..core.layers import Layer
-from ..core.activations import Activation
-from apenet.utils.data import get_batches
-from ...utils.metrics import accuracy
-from ..utils.helpers import should_print_epoch, print_epoch_status
 
-from typing import Optional, List, Any, Dict, Union
-from apenet.nn.loss.losses import Loss
-from apenet.nn.optimizers.optimizers import Optimizer
+from apenet.utils.metrics import accuracy
+from apenet.utils.data import get_batches
+from apenet.nn.activ import Activation
+from apenet.nn.layer import Layer
+from apenet.nn.utils import should_print_epoch, print_epoch_status
+
 
 class Sequential:
-    """
-    Sequential container for stacking layers.
+    """Sequential container for stacking layers.
 
     Data flows through layers in sequence during forward and backward passes.
     """
 
-    def __init__(self, layers: Optional[List[Union[Layer, Activation]]] = None):
-        """
-        Initialize the Sequential model.
+    def __init__(self, layers=None):
+        """Initialize the Sequential model.
 
         Parameters
         ----------
-        layers : list, optional
-            List of initial layers (Layer or Activation), by default None.
+        layers : list, default=None
+            List of initial layers (Layer or Activation).
         """
-        self.layers: List[Any] = layers if layers is not None else []
+        self.layers = layers if layers is not None else []
 
-    def add(self, layer: Union[Layer, Activation]) -> None:
-        """
-        Add a layer or activation to the model.
+    def add(self, layer):
+        """Add a layer or activation to the model.
 
         Parameters
         ----------
-        layer : Any
+        layer : Layer or Activation
             Layer or Activation instance to be added.
 
         Raises
@@ -45,36 +40,34 @@ class Sequential:
             raise TypeError("Layer must be an instance of Layer or Activation class")
         self.layers.append(layer)
 
-    def forward(self, x: np.ndarray) -> np.ndarray:
-        """
-        Forward pass through all layers.
+    def forward(self, x):
+        """Forward pass through all layers.
 
         Parameters
         ----------
-        x : np.ndarray
+        x : ndarray
             Input array.
 
         Returns
         -------
-        np.ndarray
+        ndarray
             Output array.
         """
         for layer in self.layers:
             x = layer.forward(x)
         return x
 
-    def backward(self, grad_output: np.ndarray) -> np.ndarray:
-        """
-        Backward pass through all layers.
+    def backward(self, grad_output):
+        """Backward pass through all layers.
 
         Parameters
         ----------
-        grad_output : np.ndarray
+        grad_output : ndarray
             Gradient with respect to the model output.
 
         Returns
         -------
-        np.ndarray
+        ndarray
             Gradient with respect to the model input.
         """
         grad = grad_output
@@ -82,9 +75,8 @@ class Sequential:
             grad = layer.backward(grad)
         return grad
 
-    def get_parameters(self) -> List[Any]:
-        """
-        Get the list of parameters from each layer.
+    def get_parameters(self):
+        """Get the list of parameters from each layer.
 
         Returns
         -------
@@ -95,24 +87,23 @@ class Sequential:
 
     def fit(
         self,
-        X_train: np.ndarray,
-        y_train: np.ndarray,
-        loss_fn: Loss,
-        optimizer: Optimizer,
-        epochs: int = 100,
-        batch_size: int = 32,
-        X_val: Optional[np.ndarray] = None,
-        y_val: Optional[np.ndarray] = None,
-        verbose: int = 1,
-    ) -> Dict[str, List[float]]:
-        """
-        Train the model using mini-batch gradient descent.
+        X_train,
+        y_train,
+        loss_fn,
+        optimizer,
+        epochs=100,
+        batch_size=32,
+        X_val=None,
+        y_val=None,
+        verbose=1,
+    ):
+        """Train the model using mini-batch gradient descent.
 
         Parameters
         ----------
-        X_train : np.ndarray
+        X_train : ndarray
             Training input data.
-        y_train : np.ndarray
+        y_train : ndarray
             Training labels.
         loss_fn : Loss
             Loss function.
@@ -122,9 +113,9 @@ class Sequential:
             Number of training epochs.
         batch_size : int, default=32
             Number of samples per batch.
-        X_val : np.ndarray, optional
+        X_val : ndarray, default=None
             Validation input data.
-        y_val : np.ndarray, optional
+        y_val : ndarray, default=None
             Validation labels.
         verbose : int, default=1
             Verbosity level.
@@ -189,15 +180,14 @@ class Sequential:
 
         return history
 
-    def evaluate(self, X: np.ndarray, y: np.ndarray, loss_fn: Loss) -> tuple[float, float]:
-        """
-        Evaluate the model.
+    def evaluate(self, X, y, loss_fn):
+        """Evaluate the model.
 
         Parameters
         ----------
-        X : np.ndarray
+        X : ndarray
             Input data.
-        y : np.ndarray
+        y : ndarray
             True labels.
         loss_fn : Loss
             Loss function.
@@ -212,26 +202,24 @@ class Sequential:
         accuracy_val = accuracy(y_true=y, y_pred=y_pred)
         return float(loss.item()), float(accuracy_val)
 
-    def predict(self, X: np.ndarray) -> np.ndarray:
-        """
-        Make predictions.
+    def predict(self, X):
+        """Make predictions.
 
         Parameters
         ----------
-        X : np.ndarray
+        X : ndarray
             Input data.
 
         Returns
         -------
-        np.ndarray
+        ndarray
             Predicted class indices.
         """
         y_pred = self.forward(X)
         return np.argmax(y_pred, axis=1)
 
-    def save(self, filepath: str) -> None:
-        """
-        Save the model parameters to a file.
+    def save(self, filepath):
+        """Save the model parameters to a file.
 
         Parameters
         ----------
@@ -246,9 +234,8 @@ class Sequential:
 
         np.savez(filepath, **params)
 
-    def load(self, filepath: str) -> None:
-        """
-        Load the model parameters from a file.
+    def load(self, filepath):
+        """Load the model parameters from a file.
 
         Parameters
         ----------

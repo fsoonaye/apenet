@@ -1,41 +1,39 @@
+# apenet/utils/data.py
 import numpy as np
-from collections import Counter
-from typing import Optional, Tuple, Generator
 
-def train_test_split(X: np.ndarray,
-                     y: np.ndarray,
-                     test_size: float = 0.2,
-                     shuffle: bool = True,
-                     rng: Optional[np.random.Generator] = None,
-                     seed: Optional[int] = None
-    ) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
-    """
-    Split data into training and test sets.
+def train_test_split(X,
+                     y,
+                     test_size=0.2,
+                     shuffle=True,
+                     rng=None,
+                     seed=None
+    ):
+    """Split data into training and test sets.
 
     Parameters
     ----------
-    X : np.ndarray
+    X : ndarray
         Input data.
-    y : np.ndarray
+    y : ndarray
         Labels.
-    test_size : float, optional
-        Proportion of data to use for testing. Default: 0.2
-    shuffle : bool, optional
-        Whether to shuffle the data before splitting. Default: True
-    rng : np.random.Generator, optional
-        Numpy random generator. Default: None
-    seed : int, optional
-        Seed for the random number generator. Default: None
+    test_size : float, default=0.2
+        Proportion of data to use for testing. 
+    shuffle : bool, default=True
+        Whether to shuffle the data before splitting.
+    rng : numpy.random.Generator, default=None
+        Numpy random generator.
+    seed : int, default=None
+        Seed for the random number generator.
 
     Returns
     -------
-    X_train : np.ndarray
+    X_train : ndarray
         Training input data.
-    X_test : np.ndarray
+    X_test : ndarray
         Test input data.
-    y_train : np.ndarray
+    y_train : ndarray
         Training labels.
-    y_test : np.ndarray
+    y_test : ndarray
         Test labels.
     """
     assert 0 < test_size < 1, "test_size must be between 0 and 1"
@@ -59,32 +57,35 @@ def train_test_split(X: np.ndarray,
 
     return X_train, X_test, y_train, y_test
 
-def get_batches(X: np.ndarray,
-                y: np.ndarray,
-                batch_size: int,
-                shuffle: bool = True,
-                rng: Optional[np.random.Generator] = None,
-                seed: Optional[int] = None
-    ) -> Generator[np.ndarray, np.ndarray]:
-    """
-    Generate mini-batches for training.
+def get_batches(X,
+                y,
+                batch_size,
+                shuffle=True,
+                rng=None,
+                seed=None
+    ):
+    """Generate mini-batches for training.
 
     Parameters
     ----------
-    X : np.ndarray
+    X : ndarray
         Input data.
-    y : np.ndarray
+    y : ndarray
         Labels.
     batch_size : int
         Size of each mini-batch.
-    shuffle : bool, optional
-        Whether to shuffle the data before creating batches. Default: True
+    shuffle : bool, default=True
+        Whether to shuffle the data before creating batches.
+    rng : numpy.random.Generator, default=None
+        Numpy random generator.
+    seed : int, default=None
+        Seed for the random number generator.
 
     Yields
     ------
-    X_batch : np.ndarray
+    X_batch : ndarray
         Mini-batch of input data.
-    y_batch : np.ndarray
+    y_batch : ndarray
         Mini-batch of labels.
     """
     if rng is None:
@@ -98,20 +99,19 @@ def get_batches(X: np.ndarray,
         batch_indices = indices[start_idx:end_idx]
         yield X[batch_indices], y[batch_indices]
 
-def one_hot_encode(y: np.ndarray, num_classes: Optional[int] = None) -> np.ndarray:
-    """
-    Convert class labels to one-hot encoding.
+def one_hot_encode(y, num_classes=None):
+    """Convert class labels to one-hot encoding.
 
     Parameters
     ----------
-    y : np.ndarray
+    y : ndarray
         Class labels.
-    num_classes : int, optional
-        Number of classes. Default: None
+    num_classes : int, default=None
+        Number of classes.
 
     Returns
     -------
-    one_hot : np.ndarray
+    one_hot : ndarray
         One-hot encoded labels.
     """
     if num_classes is None:
@@ -122,30 +122,29 @@ def one_hot_encode(y: np.ndarray, num_classes: Optional[int] = None) -> np.ndarr
     return one_hot
 
 
-def bootstrap_sample(X: np.ndarray,
-                     y: np.ndarray,
-                     rng: Optional[np.random.Generator] = None,
-                     seed: Optional[int] = None
-    ) -> Tuple[np.ndarray, np.ndarray]:
-    """
-    Generate a bootstrap sample from the data.
+def bootstrap_sample(X,
+                     y,
+                     rng=None,
+                     seed=None
+    ):
+    """Generate a bootstrap sample from the data.
 
     Parameters
     ----------
-    X : np.ndarray
+    X : ndarray
         Input data.
-    y : np.ndarray
+    y : ndarray
         Labels.
-    rng : np.random.Generator, optional
-        Numpy random generator. Default: None
-    seed : int, optional
-        Seed for the random number generator. Default: None
+    rng : numpy.random.Generator, default=None
+        Numpy random generator.
+    seed : int, default=None
+        Seed for the random number generator.
 
     Returns
     -------
-    X_sample : np.ndarray
+    X_sample : ndarray
         Bootstrap sample of input data.
-    y_sample : np.ndarray
+    y_sample : ndarray
         Bootstrap sample of labels.
     """
     if rng is None:
@@ -155,22 +154,26 @@ def bootstrap_sample(X: np.ndarray,
     idxs = rng.integers(0, n_samples, size=n_samples)
     return X[idxs], y[idxs]
 
-def standardize(X: np.ndarray) -> np.ndarray:
-    """
-    Standardizes the data in the array X.
-
+def standardize(X, eps=1e-8):
+    """Standardizes the data in the array X.
+    
     Parameters
     ----------
-    X : np.ndarray
+    X : ndarray
         Features array of shape (n_samples, n_features).
-
+    epsilon : float, default=1e-8
+        Small value to prevent division by zero.
+        
     Returns
     -------
-    np.ndarray
+    ndarray
         The standardized features array.
     """
     X = X.astype('float32')
     mean = np.mean(X, axis=0)
     std = np.std(X, axis=0)
-    std[std == 0] = 1  # Prevent division by zero
+    
+    # Use epsilon instead of setting std=1 for zero-variance features
+    std = np.where(std < eps, eps, std)
+    
     return (X - mean) / std
