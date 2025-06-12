@@ -2,11 +2,14 @@
 
 Apenet is a minimalist machine learning library built using only NumPy.
 
-The multi-layer perceptron was my first project - I built it to understand how neural networks work from the inside, believing you don't truly understand something unless you build it yourself, and to practice Python OOP. Later, for my research internship, I implemented custom decision trees and random forests to have full control over simulations and extract any statistics needed for my research.
+The multi-layer perceptron was my first project - I built it to understand how neural networks work from the inside. Later, I had to implement custom decision trees and random forests to have full control over simulations and extract any statistics needed for my research. I then decided to merge both projects.
 
-The library is intended for pedagogical and educational purposes and is not recommended for production use. It aims to be human-readable, unlike larger ML libraries, and uses NumPy-style docstrings.
+The library is intended for pedagogical and educational purposes and is not recommended for production use. It aims to readable and uses NumPy-style docstrings.
 
-## Main Components
+
+## Features Overview
+
+### Main Components
 
 The library is divided into three main parts:
 
@@ -14,36 +17,91 @@ The library is divided into three main parts:
 2. **rf**: Contains modules for random forest models.
 3. **eye**: Contains functions for data visualization.
 
-## Directory Structure
+### Neural Networks (nn)
+- **Models**:
+  - Multi-Layer Perceptron
+
+- **Loss Functions**: 
+  - CrossEntropyLoss for classification
+  - MSELoss for regression
+
+- **Optimizers**: 
+  - SGD with momentum
+  - Adam
+
+- **Activation Functions**:
+  - ReLU
+  - Sigmoid
+  - Tanh
+  - Softmax
+
+- **Weight Initializers**:
+  - Xavier initialization
+  - He initialization
+  - Normal initialization
+  - Zeros initialization
+
+
+### Random Forests (rf)
+- **Decision Trees**:
+  - Classification trees with Gini impurity
+  - Regression trees with variance reduction
+  - Configurable stopping criterias
+  - MDI computation
+
+- **Random Forests**:
+  - Regression with averaging
+  - Classification with majority voting
+  - Bootstrap sampling
+  - Feature importance calculation
+
+### Visualization (eye)
+- **History Visualization**:
+  - plot_history for tracking training metrics (accuracy/loss vs epoch)
+
+- **Tree Visualization**:
+  - plot_tree_structure for visualizing decision tree structure
+  - plot_decision_regions for visualizing model decision regions and splits
+
+- **Data Visualization**:
+  - plot_confusion_matrix for classification evaluation
+
+### Utilities
+- **Metrics**:
+  - Accuracy for classification
+  - Mean squared error for regression
+
+- **Data Processing**:
+  - Bootstrap sampling
+  - Standardize
+
+### Directory Structure
 
 ```
-apenet
+apenet/
 ├── eye
-│   └── visuals.py
-├── interfaces
-│   └── base_model.py
-├── nn
-│   ├── core
-│   │   ├── activations.py
-│   │   └── layers.py
-│   ├── initialize
-│   │   └── initializers.py
-│   ├── loss
-│   │   └── losses.py
+│   ├── data.py
+│   ├── history.py
+│   └── tree.py
+├── interfaces.py
+├── nn/
+│   ├── activ.py
+│   ├── init.py
+│   ├── layer.py
+│   ├── loss.py
 │   ├── models
 │   │   ├── mlp.py
 │   │   └── sequential.py
-│   ├── optimizers
-│   │   └── optimizers.py
-│   └── utils
-│       └── helpers.py
-├── rf
-│   └── rf.py
-└── utils
+│   ├── optim.py
+│   └── utils.py
+├── rf/
+│   ├── forest.py
+│   └── tree.py
+└── utils/
     ├── data.py
     └── metrics.py
 
-12 directories, 14 files
+6 directories, 16 files
 ```
 
 ## Installation
