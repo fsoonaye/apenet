@@ -108,33 +108,6 @@ class XavierInitializer(Initializer):
         return self.rng.normal(0, std, (in_dim, out_dim))
 
 
-class SmallHeInitializer(Initializer):
-    """Conservative He initialization with smaller variance.
-    Useful for preventing numerical instability.
-    """
-    
-    def __init__(self, scale=0.1, rng=None, seed=None):
-        super().__init__(rng=rng, seed=seed)
-        self.scale = scale
-    
-    def init(self, shape):
-        """Initialize weights using scaled He initialization.
-        
-        Parameters
-        ----------
-        shape : tuple
-            Tuple of (in_features, out_features).
-            
-        Returns
-        -------
-        ndarray
-            Initialized weights.
-        """
-        in_dim, out_dim = shape
-        std = np.sqrt(2.0 / in_dim) * self.scale
-        return self.rng.normal(0, std, (in_dim, out_dim))
-
-
 @lru_cache(maxsize=1)
 def get_initializer_registry():
     """Auto-discover all initializer classes and create a registry.
